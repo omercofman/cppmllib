@@ -8,4 +8,5 @@ In this point I am going to add functionality to the lib. After I will get the g
 
 # Now available
 2D Linear regression
+2D Gradient Descent 
 
