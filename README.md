@@ -7,7 +7,7 @@ Free to use for everybody.
 In this point I am going to add functionality to the lib. After I will get the gist of it I will structure it better with classes.
 
 # Now available
-2D Linear regression
+N-Dimensions Linear regression
 
-2D Gradient Descent 
+N-Dimensions Gradient Descent 
 
