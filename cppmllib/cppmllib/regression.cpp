@@ -19,7 +19,7 @@ namespace cppmllib
 	*	Sanity check
 	*	True for all regression type functions in this file
 	*/
-	void genericCheckup(const vector<double>& codomain, const vector<vector<double>>& domains, const vector<double>& coeffs, double alpha, size_t epochs) {
+	void genericCheckup(const vector<double>& codomain, const vector<vector<double>>& domains, const vector<double>& coeffs, const double& alpha, const size_t& epochs) {
 		THROW_IF_ZERO(codomain.size());
 		
 		for (auto i{ 0U }; i < domains.size(); ++i) {
@@ -35,7 +35,7 @@ namespace cppmllib
 	/*
 	*    y = b0 + b1*x0 + b2*x1 ... b(n-1)*x(n-2)
 	*    b0 is the bias
-	*    bi coefficients are slopes
+	*    bi is the slope of dimension number i
 	*/
 	function<double(const vector<double>&)> hyperplaneFormula(const vector<double>& coeff) {
 		auto func = [coeff](const vector<double>& dim) {
@@ -107,6 +107,50 @@ namespace cppmllib
 	}
 
 	/*
+	*	N-Dimentions Gradient Descent f:R^N->R
+	*
+	*	Coefficient calculation:
+	*	Coefficient i=1...(N-1) = ci - alpha * error * xij
+	*   Coefficient0 = c0 - alpha * error
+	*
+	*	Estimated function calculation:
+	*   f(values) -> c0 + SUM i=1...(N-1)[ci * values(i-1)]
+	*
+	*	Input:
+	*	const vector<double>&			codomain	- Sulotions of the function
+	*   const vector<vector<double>>&	domains		- The dimentios of the function
+	*	vector<double>&					coeff		- Coefficients initialized to first guess
+	*	dobule							alpha		- Change rate
+	*	size_t							epochs		- Times to run through the dataset
+	*
+	*	Output:
+	*	function<double(const vector<double>&)>		- Estimated function
+	*/
+	function<double(const vector<double>&)> gradientDescent(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha, size_t epochs) {
+		genericCheckup(codomain, domains, coeff, alpha, epochs);
+
+		for (auto toLoop{ 0U }; toLoop < epochs; ++toLoop) {
+			for (auto i{ 0U }; i < domains.size(); ++i) {				
+				for (auto j{ 0U }; j < domains[i].size(); ++j) {
+					auto prediction = hyperplaneFormula(coeff);
+					auto error = prediction({ domains[i][j] }) - codomain[j]; 
+
+					for (auto k{ 0U }; k < coeff.size(); ++k) {
+						if (0 == k) {
+							coeff[0] -= alpha * error;
+						}
+						else {
+							coeff[k] -= alpha * error * domains[i][j];
+						}
+					}
+				}
+			}
+		}
+
+		return hyperplaneFormula(coeff);
+	}
+
+	/*
 	*	N-Dimentions Logistic Regression f:R^N->R(0...1)
 	*
 	*	Coefficient calculation:
@@ -154,45 +198,6 @@ namespace cppmllib
 			return (1 / (1 + exp(-prediction(dim))));
 		};
 		return logisticEstimation;
-	}
-
-	/*
-	*	N-Dimentions Gradient Descent f:R^N->R
-	*
-	*	Coefficient calculation:
-	*	Coefficient 
-	*   Coefficient0 
-	*
-	*	Estimated function calculation:
-	*   f(values) -> 
-	*
-	*	Input:
-	*	const vector<double>&			codomain	- Sulotions of the function
-	*   const vector<vector<double>>&	domains		- The dimentios of the function
-	*	vector<double>&					coeff		- Coefficients initialized to first guess
-	*	dobule							alpha		- Change rate
-	*	size_t							epochs		- Times to run through the dataset
-	*
-	*	Output:
-	*	function<double(const vector<double>&)>		- Estimated function
-	*/
-	function<double(const vector<double>&)> gradientDescent(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha, size_t epochs) {
-		genericCheckup(codomain, domains, coeff, alpha, epochs);
-		
-		for (auto toLoop{ 0U }; toLoop < epochs; ++toLoop) {
-			for (auto i{ 0U }; i < domains.size(); ++i) {
-				auto prediction = hyperplaneFormula(coeff);
-				auto error = prediction(domains[i]) - codomain[i];
-				
-				coeff[0] -= alpha * error;
-
-				for (auto j{ 1U }; j < coeff.size(); ++j) {
-					coeff[j] -= alpha * error * domains[i][j - 1];
-				}
-			}			
-		}
-
-		return hyperplaneFormula(coeff);
 	}
 }
 
