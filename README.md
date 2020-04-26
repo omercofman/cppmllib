@@ -7,7 +7,7 @@ Free to use for everybody.
 In this point I am going to add functionality to the lib. After I will get the gist of it I will structure it better with classes.
 
 # Now available
-N-Dimensions Linear regression
+N-Dimensions Linear Regression
 
 N-Dimensions Logistic Regression
 
