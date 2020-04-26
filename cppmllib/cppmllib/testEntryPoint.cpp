@@ -27,8 +27,8 @@ void testLinearRegression() {
 	vector<double> y{ 1, 3, 3, 2, 5 };
 
 	vector<tuple<string, cppmllib::regression, double, size_t>> linearFunc{
-		{ "cppmllib::linearRegression", cppmllib::linearRegression, -1, -1 },
-		{ "cppmllib::gradientDescent", cppmllib::gradientDescent, 0.01, 20 }
+		{ "cppmllib::linearRegression",			cppmllib::linearRegression,			-1,		-1 },
+		{ "cppmllib::linearGradientDescent",	cppmllib::linearGradientDescent,	0.01,	20 },
 	};
 
 	enum {
@@ -41,7 +41,7 @@ void testLinearRegression() {
 	for (auto obj : linearFunc) {
 		cout << std::get<NAME>(obj) << endl;
 
-		vector<double> coeff{ 0, 0 };
+		vector<double> coeff(1 + x.size(), 0.0);
 		auto estfunc = std::get<FUNC>(obj)(y, x, coeff, std::get<ALPH>(obj), std::get<EPOC>(obj));
 
 		for (auto i{ 0U }; i < coeff.size(); ++i) {
@@ -67,7 +67,7 @@ void testLogisticRegression() {
 	auto alpha{ 0.3 };
 	auto epochs{ 10U };
 
-	vector<double> coeff{ 0, 0, 0 };
+	vector<double> coeff(1 + x.size(), 0.0);
 	auto estfunc = cppmllib::logisticRegression(y, x, coeff, alpha, epochs);
 
 	cout << "cppmllib::logisticRegression" << endl;

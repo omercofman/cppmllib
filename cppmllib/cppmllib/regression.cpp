@@ -126,22 +126,26 @@ namespace cppmllib
 	*	Output:
 	*	function<double(const vector<double>&)>		- Estimated function
 	*/
-	function<double(const vector<double>&)> gradientDescent(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha, size_t epochs) {
+	function<double(const vector<double>&)> linearGradientDescent(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha, size_t epochs) {
 		genericCheckup(codomain, domains, coeff, alpha, epochs);
 
 		for (auto toLoop{ 0U }; toLoop < epochs; ++toLoop) {
-			for (auto i{ 0U }; i < domains.size(); ++i) {				
-				for (auto j{ 0U }; j < domains[i].size(); ++j) {
-					auto prediction = hyperplaneFormula(coeff);
-					auto error = prediction({ domains[i][j] }) - codomain[j]; 
+			for (auto i{ 0U }; i < codomain.size(); ++i) {
+				auto localPrediction = hyperplaneFormula(coeff);
+				vector<double> dim;
 
-					for (auto k{ 0U }; k < coeff.size(); ++k) {
-						if (0 == k) {
-							coeff[0] -= alpha * error;
-						}
-						else {
-							coeff[k] -= alpha * error * domains[i][j];
-						}
+				for (auto j{ 0U }; j < domains.size(); ++j) {
+					dim.push_back(domains[j][i]);
+				}
+
+				auto error = localPrediction(dim) - codomain[i];
+
+				for (auto j{ 0U }; j < coeff.size(); ++j) {
+					if (0 == j) {
+						coeff[0] -= alpha * error;
+					}
+					else {
+						coeff[j] -= alpha * error * dim[j - 1];
 					}
 				}
 			}
@@ -178,7 +182,7 @@ namespace cppmllib
 				auto localPrediction = hyperplaneFormula(coeff); // Prepare the prediction function with the current coefficients
 				vector<double> dim;
 
-				for (size_t j{ 0 }; j < domains.size(); ++j) {
+				for (auto j{ 0U }; j < domains.size(); ++j) {
 					dim.push_back(domains[j][i]);
 				}
 
