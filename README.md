@@ -9,7 +9,7 @@ In this point I am going to add functionality to the lib. After I will get the g
 # Now available
 N-Dimensions Linear Regression
 
-N-Dimensions Logistic Regression
+N-Dimensions Linear Gradient Descent
 
-N-Dimensions Gradient Descent 
+N-Dimensions Logistic Regression
 
