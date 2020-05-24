@@ -3,14 +3,17 @@
 #include "utilities.h"
 
 #include <math.h>
+#include <float.h>
 
 #include <vector>
 #include <iterator> 
 #include <algorithm>
 #include <numeric>
+#include <map>
 
 using std::function;
 using std::vector;
+using std::map;
 
 namespace cppmllib
 {
@@ -65,7 +68,7 @@ namespace cppmllib
 	*	Input:
 	*	const vector<double>&			codomain	- Sulotions of the function
 	*   const vector<vector<double>>&	domains		- The dimentios of the function 
-	*	vector<double>&					coeff		- Coefficients initialized to first guess
+	*	vector<double>&					coeff		- Coefficients initialized to first guess (weights)
 	*	dobule							alpha		- not used (deafult -1)
 	*	size_t							epochs		- not used (deafult -1)
 	*
@@ -119,7 +122,7 @@ namespace cppmllib
 	*	Input:
 	*	const vector<double>&			codomain	- Sulotions of the function
 	*   const vector<vector<double>>&	domains		- The dimentios of the function
-	*	vector<double>&					coeff		- Coefficients initialized to first guess
+	*	vector<double>&					coeff		- Coefficients initialized to first guess (weights)
 	*	dobule							alpha		- Change rate
 	*	size_t							epochs		- Times to run through the dataset
 	*
@@ -138,15 +141,13 @@ namespace cppmllib
 					dim.push_back(domains[j][i]);
 				}
 
+				// Find current error of prediction
 				auto error = localPrediction(dim) - codomain[i];
 
-				for (auto j{ 0U }; j < coeff.size(); ++j) {
-					if (0 == j) {
-						coeff[0] -= alpha * error;
-					}
-					else {
-						coeff[j] -= alpha * error * dim[j - 1];
-					}
+				// Update coefficients
+				coeff[0] -= alpha * error;
+				for (auto j{ 1U }; j < coeff.size(); ++j) {
+					coeff[j] -= alpha * error * dim[j - 1];
 				}
 			}
 		}
@@ -155,7 +156,7 @@ namespace cppmllib
 	}
 
 	/*
-	*	N-Dimentions Logistic Regression f:R^N->R(0...1)
+	*	N-Dimentions Logistic Regression f:R^N->R (Real values between (0,1))
 	*
 	*	Coefficient calculation:
 	*	Coefficient i=1...(N-1) = ci + alpha * (ci - est) * est * (1 - est) * xi
@@ -165,9 +166,9 @@ namespace cppmllib
 	*   f(values) -> 1 / (1 + e^-(c0 + SUM i=1...(N-1)[ci * values(i-1)]))
 	*
 	*	Input:
-	*	const vector<double>&			codomain	- Sulotions of the function
+	*	const vector<double>&			codomain	- Sulotions of the function (classes)
 	*   const vector<vector<double>>&	domains		- The dimentios of the function
-	*	vector<double>&					coeff		- Coefficients initialized to first guess
+	*	vector<double>&					coeff		- Coefficients initialized to first guess (weights)
 	*	dobule							alpha		- Change rate
 	*	size_t							epochs		- Times to run through the dataset
 	*
@@ -179,7 +180,7 @@ namespace cppmllib
 
 		for (auto toLoop{ 0U }; toLoop < epochs; ++toLoop) {
 			for (auto i{ 0U }; i < codomain.size(); ++i) {
-				auto localPrediction = hyperplaneFormula(coeff); // Prepare the prediction function with the current coefficients
+				auto localPrediction = hyperplaneFormula(coeff);
 				vector<double> dim;
 
 				for (auto j{ 0U }; j < domains.size(); ++j) {
@@ -198,10 +199,80 @@ namespace cppmllib
 		}
 
 		auto prediction = hyperplaneFormula(coeff);
-		auto logisticEstimation = [=](const vector<double>& dim) {
+		auto logisticEstimation = [prediction](const vector<double>& dim) {
 			return (1 / (1 + exp(-prediction(dim))));
 		};
 		return logisticEstimation;
+	}
+
+	/*
+	*	Linear Discriminant Analysis 
+	*
+	*	Coefficient calculation:
+	*	Coefficient i=1...(N-1) = 
+	*   Coefficient0 = 
+	*
+	*	Estimated function calculation:
+	*   f(values) -> 
+	*
+	*	Input:
+	*	const vector<double>&			codomain	- Sulotions of the function (classes)
+	*   const vector<vector<double>>&	domains		- The dimentios of the function
+	*	vector<double>&					coeff		- Coefficients initialized to first guess (weights)
+	*	dobule							alpha		- Change rate
+	*	size_t							epochs		- Times to run through the dataset
+	*
+	*	Output:
+	*	function<double(const vector<double>&)>		- Estimated function
+	*/
+	void LDAPreporcessing(const vector<double>& codomain, const vector<vector<double>>& domains, map<double, vector<double>>& mDomains);
+	
+	function<double(const vector<double>&)> linearDiscriminantAnalysis(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha, size_t epochs) {
+		map<double, vector<double>> mDomains;
+		LDAPreporcessing(codomain, domains, mDomains);
+		
+		vector<double> mean;
+		vector<double> probability;
+		auto sumSqueredDiff{ 0.0 };
+
+		for (auto it = mDomains.begin(); it != mDomains.end(); ++it) {
+			// Find mean for each domain
+			auto avg = cppmllib::average(it->second);
+			mean.push_back(avg);
+			
+			// Find probablity for each class
+			probability.push_back(static_cast<double>(it->second.size()) / codomain.size());
+			
+			// Find sum of squared diffs over all instances and classes
+			for (auto i{ 0U }; i < it->second.size(); ++i) {
+				double diff = it->second[i] - avg;
+				sumSqueredDiff += diff * diff;
+			}
+		}
+
+		auto variance = (1.0 / (domains[0].size() - mDomains.size())) * sumSqueredDiff;
+
+		auto prediction = [mean, probability, variance](const vector<double> val) {
+			auto pred{ -1.0 };
+			auto currMaxDiscriminant{ DBL_MIN };
+
+			for (auto i{ 0U }; i < mean.size(); ++i) {
+				auto discriminant = val[0] * (mean[i] / variance) - ((mean[i] * mean[i]) / (2 * variance)) + log(probability[i]);
+				if (discriminant > currMaxDiscriminant) {
+					currMaxDiscriminant = discriminant;
+					pred = i;
+				}
+			}
+			return pred;
+		};
+		return prediction;
+	}
+	
+	void LDAPreporcessing(const vector<double>& codomain, const vector<vector<double>>& domains, map<double, vector<double>>& mDomains) {
+		// Sort domains by class
+		for (auto i{ 0U }; i < codomain.size(); ++i) {
+			mDomains[codomain[i]].push_back(domains[0][i]);	
+		}
 	}
 }
 

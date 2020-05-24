@@ -80,7 +80,7 @@ void testLogisticRegression() {
 
 	for (auto i{ 0U }; i < x1.size(); ++i) {
 		auto predicted = estfunc({ x1[i], x2[i] }) >= 0.5;
-		if (predicted == y[i]) {
+		if (predicted == static_cast<bool>(y[i])) {
 			++hit;
 		}
 
@@ -90,7 +90,32 @@ void testLogisticRegression() {
 	cout << "Accuracy estimation: " << 100.0 * hit / x1.size() << "%" << endl << endl;
 }
 
+void testLDA() {
+	vector<double> x1{ 4.667797637, 5.509198779, 4.702791608, 5.956706641, 5.738622413, 5.027283325, 4.805434058, 4.425689143, 5.009368635, 5.116718815, 6.370917709, 2.895041947, 4.666842365, 5.602154638, 4.902797978, 5.032652964, 4.083972925, 4.875524106, 4.732801047, 5.385993407, 20.74393514, 21.41752855, 20.57924186, 20.7386947 , 19.44605384, 18.36360265, 19.90363232, 19.10870851, 18.18787593, 19.71767611, 19.09629027, 20.52741312, 20.63205608, 19.86218119, 21.34670569, 20.333906, 21.02714855, 18.27536089, 21.77371156, 20.65953546 };
+
+	vector<vector<double>> x{ x1 };
+	vector<double> y(x1.size(), 0);
+	 
+	for (auto i{ (y.size() >> 1) }; i < y.size(); ++i) {
+		y[i] = 1;
+	}
+
+	auto alpha{ -1.0 };
+	auto epochs{ 0U };
+
+	vector<double> coeff(1 + x.size(), -1.0);
+	auto estfunc = cppmllib::linearDiscriminantAnalysis(y, x, coeff, alpha, epochs);
+
+	cout << "cppmllib::linearDiscriminantAnalysis" << endl;
+
+	for (auto i{ 0U }; i < x1.size(); ++i) {
+		auto predicted = estfunc({ x1[i] });
+		cout << "Predicted: " << predicted << "\tActuall: " << y[i] << "\tError: " << y[i] - predicted << endl;
+	}
+}
+
 void testRegression() {
 	testLinearRegression();
 	testLogisticRegression();
+	testLDA();
 }

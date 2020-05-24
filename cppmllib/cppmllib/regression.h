@@ -13,4 +13,5 @@ namespace cppmllib
 	function<double(const vector<double>&)> linearRegression(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha = -1, size_t epochs = -1);
 	function<double(const vector<double>&)> linearGradientDescent(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha = 0.01, size_t epochs = 20);
 	function<double(const vector<double>&)> logisticRegression(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha = 0.3, size_t epochs = 6);
+	function<double(const vector<double>&)> linearDiscriminantAnalysis(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha = 0.3, size_t epochs = 6);
 }
