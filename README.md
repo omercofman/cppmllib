@@ -13,3 +13,4 @@ N-Dimensions Linear Gradient Descent
 
 N-Dimensions Logistic Regression
 
+N-Dimensions LDA
