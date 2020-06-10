@@ -1,5 +1,5 @@
 
-#include "regression.h"
+#include "LinearAlgorithms.h"
 #include "utilities.h"
 
 #include <math.h>
@@ -205,7 +205,7 @@ namespace cppmllib
 		return logisticEstimation;
 	}
 
-	/*
+	/*	*** TBD ***
 	*	Linear Discriminant Analysis 
 	*
 	*	Coefficient calculation:
@@ -218,61 +218,67 @@ namespace cppmllib
 	*	Input:
 	*	const vector<double>&			codomain	- Sulotions of the function (classes)
 	*   const vector<vector<double>>&	domains		- The dimentios of the function
-	*	vector<double>&					coeff		- Coefficients initialized to first guess (weights)
-	*	dobule							alpha		- Change rate
-	*	size_t							epochs		- Times to run through the dataset
 	*
 	*	Output:
 	*	function<double(const vector<double>&)>		- Estimated function
 	*/
-	void LDAPreporcessing(const vector<double>& codomain, const vector<vector<double>>& domains, map<double, vector<double>>& mDomains);
-	
-	function<double(const vector<double>&)> linearDiscriminantAnalysis(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha, size_t epochs) {
-		map<double, vector<double>> mDomains;
-		LDAPreporcessing(codomain, domains, mDomains);
-		
-		vector<double> mean;
-		vector<double> probability;
-		auto sumSqueredDiff{ 0.0 };
+	namespace overload {
+		// linearAlgorithm-type-non-conforming version
+		function<double(const vector<double>&)> linearDiscriminantAnalysis(const vector<double>& codomain, const vector<vector<double>>& domains, map<double, vector<double>>& mDomains) {
+			vector<double> mean;
+			vector<double> probability;
+			auto sumSqueredDiff{ 0.0 };
 
-		for (auto it = mDomains.begin(); it != mDomains.end(); ++it) {
-			// Find mean for each domain
-			auto avg = cppmllib::average(it->second);
-			mean.push_back(avg);
-			
-			// Find probablity for each class
-			probability.push_back(static_cast<double>(it->second.size()) / codomain.size());
-			
-			// Find sum of squared diffs over all instances and classes
-			for (auto i{ 0U }; i < it->second.size(); ++i) {
-				double diff = it->second[i] - avg;
-				sumSqueredDiff += diff * diff;
-			}
-		}
+			for (auto it = mDomains.begin(); it != mDomains.end(); ++it) {
+				// Find mean for each domain
+				auto avg = cppmllib::average(it->second);
+				mean.push_back(avg);
 
-		auto variance = (1.0 / (domains[0].size() - mDomains.size())) * sumSqueredDiff;
+				// Find probablity for each class
+				probability.push_back(static_cast<double>(it->second.size()) / codomain.size());
 
-		auto prediction = [mean, probability, variance](const vector<double> val) {
-			auto pred{ -1.0 };
-			auto currMaxDiscriminant{ DBL_MIN };
-
-			for (auto i{ 0U }; i < mean.size(); ++i) {
-				auto discriminant = val[0] * (mean[i] / variance) - ((mean[i] * mean[i]) / (2 * variance)) + log(probability[i]);
-				if (discriminant > currMaxDiscriminant) {
-					currMaxDiscriminant = discriminant;
-					pred = i;
+				// Find sum of squared diffs over all instances and classes
+				for (auto i{ 0U }; i < it->second.size(); ++i) {
+					auto diff = it->second[i] - avg;
+					sumSqueredDiff += diff * diff;
 				}
 			}
-			return pred;
-		};
-		return prediction;
+
+			auto variance = (1.0 / (domains[0].size() - mDomains.size())) * sumSqueredDiff;
+
+			auto prediction = [mean, probability, variance](const vector<double> val) {
+				auto pred{ -1.0 };
+				auto currMaxDiscriminant{ DBL_MIN };
+
+				for (auto i{ 0U }; i < mean.size(); ++i) {
+					auto discriminant = val[0] * (mean[i] / variance) - ((mean[i] * mean[i]) / (2 * variance)) + log(probability[i]);
+					if (discriminant > currMaxDiscriminant) {
+						currMaxDiscriminant = discriminant;
+						pred = i;
+					}
+				}
+				return pred;
+			};
+			return prediction;
+		}
 	}
-	
-	void LDAPreporcessing(const vector<double>& codomain, const vector<vector<double>>& domains, map<double, vector<double>>& mDomains) {
+	// Covnerting from conforming type to non-conforming type
+	static void LDAPreporcessing(const vector<double>& codomain, const vector<vector<double>>& domains, map<double, vector<double>>& mDomains) {
 		// Sort domains by class
 		for (auto i{ 0U }; i < codomain.size(); ++i) {
 			mDomains[codomain[i]].push_back(domains[0][i]);	
 		}
 	}
+
+	// linearAlgorithm type-conforming version
+	function<double(const vector<double>&)> linearDiscriminantAnalysis(const vector<double>& codomain, const vector<vector<double>>& domains, vector<double>& coeff, double alpha, size_t epochs) {
+		map<double, vector<double>> mDomains;
+		
+		LDAPreporcessing(codomain, domains, mDomains);
+
+		return cppmllib::overload::linearDiscriminantAnalysis(codomain, domains, mDomains);
+	}
+
+
 }
 
